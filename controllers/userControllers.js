@@ -1,7 +1,114 @@
-import Story from '../models/userModels/storyModel.js'
-import Complaint from '../models/userModels/complaintModel.js'
-import Volunteer from '../models/userModels/volunteerModel.js'
-import path from 'path'
+import path from 'path';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import otpGenerator from 'otp-generator';
+
+import Story from '../models/userModels/storyModel.js';
+import Complaint from '../models/userModels/complaintModel.js';
+import Volunteer from '../models/userModels/volunteerModel.js';
+import userModel from '../models/userModels/userModel.js';
+import sendEmail from './Helpers/nodeMailer.js';
+import { passwordHash } from './Helpers/passwordHash.js';
+
+
+
+
+// USER REGISTRATION CONTROLLER
+const registerUser = async(req, res, next) => {
+    try {
+        console.log(req.cookies)
+        const { username, email, password } = req.body;
+        console.log(req.body)
+        if (!(username && email && password)) {
+            return res.status(400).json({ success: false, message: "All fields are required." });
+        }   
+
+        
+        const existingUser = await userModel.findOne({ email: email });
+        if (existingUser) {
+            return res.status(400).json({ success: false, message: "Email already registered." });
+        }
+
+        const securePassword = await passwordHash(password);
+
+        const user = new userModel({
+            username, 
+            email,
+            password: securePassword
+        });
+        
+        const savedUser = await user.save();
+
+        if (savedUser) {
+            const otp = otpGenerator.generate(6, { upperCaseAlphabets: false, specialChars: false, lowerCaseAlphabets:false });
+            const html = `<div style="width: 100%;background: #F5FEFD;text-align:center"><h2>${user.username} Welcome Our Shopping Website</h2><h6>Verification OTP</h6><h3 style="color: red;">${otp}</h3><h2>Thank You For Joining...</h2></div>`
+            await sendEmail(user.email, html);
+            const OTPdata = {
+                id:savedUser._id,
+                otp,
+                expire:Date.now()
+            }
+            res.status(201).cookie('OTP',JSON.stringify(OTPdata),{
+                maxAge: 2 * 60 * 1000, 
+                secure: true,
+                httpOnly: true,
+                sameSite: 'strict'
+            }).json({
+                success:true,
+                message:'OTP sending Successful.'
+            })
+        } else {
+            throw new Error("Registration failed, please try again.");
+        }
+        
+    } catch (error) {
+        console.log(error)
+        next(error);
+    }
+}
+
+
+// USER LOGIN CONTROLLER
+
+const loginUser = async(req, res, next) => {
+    try {
+        const {username, password} = req.body;
+
+        if(!(username && password)){
+            res.status(400).json({success:false, message:"Must Requires Username and Password"});
+            return;
+        }
+
+        const existingUser = await userModel.findOne({email:username});
+
+        if(!(existingUser && await bcrypt.compare(password, existingUser.password))){
+            res.status(400).json({success:false, message:"Check Username and Password"});
+            return;
+        }
+        
+        existingUser.password = null;
+
+
+        const token = jwt.sign({id:existingUser._id}, process.env.JWT_SECRET,{
+            expiresIn:'1d'
+        })
+
+        res.status(201).cookie('userToken',token,{
+            maxAge: 86400000, 
+            secure: true,
+            httpOnly: true,
+            sameSite: 'strict'
+        }).json({
+            success:true,
+            user:existingUser
+        });
+
+    } catch (error) {
+        next(error);
+    }
+}
+
+
 
 // CONTROLLER FUNCTION FOR POST THE STORIES
 
@@ -144,4 +251,11 @@ const postvolunteer = async (req, res) => {
   }
 }
 
-export { postStory, editStory, postComplaints, deleteStory, postvolunteer }
+export { 
+    postStory, 
+    editStory, 
+    postComplaints, 
+    deleteStory, 
+    postvolunteer, 
+    registerUser 
+}
