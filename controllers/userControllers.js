@@ -2,6 +2,7 @@ import Story from '../models/userModels/storyModel.js'
 import Complaint from '../models/userModels/complaintModel.js'
 import Volunteer from '../models/userModels/volunteerModel.js'
 import path from 'path'
+import { isBuffer } from 'util'
 
 // CONTROLLER FUNCTION FOR POST THE STORIES
 
@@ -144,4 +145,34 @@ const postvolunteer = async (req, res) => {
   }
 }
 
-export { postStory, editStory, postComplaints, deleteStory, postvolunteer }
+// SEARCH VOLUNTEERS CONTROLLER FUNCTIONALITY LOGICS
+
+const searchVolunteers = async (req, res) => {
+  try {
+    const { query } = req.query
+
+    const results = await Volunteer.find({
+      $or: [{ location: { $regex: query, $options: 'i' } }]
+    })
+
+    if (!results) {
+      return res.status(404).json({ error: 'No results found' })
+    }
+
+    res.status(200).json(results)
+  } catch (error) {
+    console.log(error)
+    res
+      .status(500)
+      .json({ error: 'An error occurred while performing the search' })
+  }
+}
+
+export {
+  postStory,
+  editStory,
+  postComplaints,
+  deleteStory,
+  postvolunteer,
+  searchVolunteers
+}
