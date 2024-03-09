@@ -16,9 +16,9 @@ import { passwordHash } from './Helpers/passwordHash.js';
 // USER REGISTRATION CONTROLLER
 const registerUser = async(req, res, next) => {
     try {
-        console.log(req.cookies)
+
         const { username, email, password } = req.body;
-        console.log(req.body)
+     
         if (!(username && email && password)) {
             return res.status(400).json({ success: false, message: "All fields are required." });
         }   
@@ -46,7 +46,7 @@ const registerUser = async(req, res, next) => {
             const OTPdata = {
                 id:savedUser._id,
                 otp,
-                expire:Date.now()
+                startTime:Date.now()
             }
             res.status(201).cookie('OTP',JSON.stringify(OTPdata),{
                 maxAge: 2 * 60 * 1000, 
@@ -68,8 +68,34 @@ const registerUser = async(req, res, next) => {
 }
 
 
-// USER LOGIN CONTROLLER
+// USER OTP VERIFICATION 
+const verifyOTP = async(req, res, next) => {
+    try {
+        const { otp } = req.body;
+        const endTime = Date.now();
+        const OTP_INFO = JSON.parse(req.cookies.OTP);
+        const takenTime = (endTime / 1000) - (OTP_INFO.startTime / 1000);
 
+        if(takenTime < 120 ){
+            if(otp === OTP_INFO.otp){
+                const verifedUpdate = await userModel.updateOne({_id:OTP_INFO.id},{$set:{isVerified:true}});
+                if(verifedUpdate){
+                    res.status(200).json({success:true, message:'OTP Verification Successful'});
+                    return;
+                }
+            }
+            res.status(404).json({success:false,message:'OTP Does Not Match.'})
+        }else{
+            res.status(404).json({success:false,message:'OTP Expired.'})
+        }
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+
+
+// USER LOGIN CONTROLLER
 const loginUser = async(req, res, next) => {
     try {
         const {username, password} = req.body;
@@ -85,9 +111,32 @@ const loginUser = async(req, res, next) => {
             res.status(400).json({success:false, message:"Check Username and Password"});
             return;
         }
+
+        if(!existingUser.isVerified){
+            const otp = otpGenerator.generate(6, { upperCaseAlphabets: false, specialChars: false, lowerCaseAlphabets:false });
+            const html = `<div style="width: 100%;background: #F5FEFD;text-align:center"><h2>${existingUser.username} Welcome Our Shopping Website</h2><h6>Verification OTP</h6><h3 style="color: red;">${otp}</h3><h2>Thank You For Joining...</h2></div>`
+            await sendEmail(existingUser.email, html);
+            const OTPdata = {
+                id:existingUser._id,
+                otp,
+                startTime:Date.now()
+            }
+            res.status(201).cookie('OTP',JSON.stringify(OTPdata),{
+                maxAge: 2 * 60 * 1000, 
+                secure: true,
+                httpOnly: true,
+                sameSite: 'strict'
+            }).json({
+                success:false,
+                verificationProcess:true,
+                message:'OTP sending Successful.'
+            })
+            return;
+        }
         
         existingUser.password = null;
 
+        console.log(existingUser)
 
         const token = jwt.sign({id:existingUser._id}, process.env.JWT_SECRET,{
             expiresIn:'1d'
@@ -257,5 +306,7 @@ export {
     postComplaints, 
     deleteStory, 
     postvolunteer, 
-    registerUser 
+    registerUser,
+    verifyOTP,
+    loginUser
 }

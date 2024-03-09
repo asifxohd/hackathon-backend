@@ -14,7 +14,7 @@ const userSchema = mongoose.Schema({
         require:true
     },
     isVerified:{
-        type:String,
+        type:Boolean,
         require:true,
         default:false
     }
