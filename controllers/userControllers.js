@@ -1,12 +1,13 @@
 import Story from '../models/userModels/storyModel.js'
 import Complaint from '../models/userModels/complaintModel.js'
+import Volunteer from '../models/userModels/volunteerModel.js'
 import path from 'path'
 
 // CONTROLLER FUNCTION FOR POST THE STORIES
 
 const postStory = async (req, res) => {
   try {
-    const { title, description,name } = req.body
+    const { title, description, name } = req.body
 
     let imagePath = ''
 
@@ -33,48 +34,69 @@ const postStory = async (req, res) => {
   }
 }
 
-
 // EDIT STORY CONTROLLER
 
 const editStory = async (req, res) => {
-    try {
+  try {
+    const { id, title, description, name } = req.body
 
-      const { id, title, description, name } = req.body;
+    console.log(id)
+    console.log(title)
+    console.log(description)
+    console.log(name)
 
-      console.log(id);
-      console.log(title);
-      console.log(description);
-      console.log(name);
-  
-      let imagePath = '';
-  
-      if (req.file) {
-        imagePath = path.join('public', req.file.filename);
-      }
-  
-      const story = await Story.findById(id);
+    let imagePath = ''
 
-      if (!story) {
-        return res.status(404).json({ error: 'Story not found' });
-      }
-  
-      story.title = title;
-      story.description = description;
-      story.name = name;
-      if (imagePath) {
-        story.image = imagePath;
-      }
-  
-      const updatedStory = await story.save();
-  
-      res.status(200).json(updatedStory);
-      console.log('Story updated');
-    } catch (error) {
-      console.log(error);
-      res.status(500).json({ error: 'An error occurred while editing the story' });
+    if (req.file) {
+      imagePath = path.join('public', req.file.filename)
     }
-  };
-  
+
+    const story = await Story.findById(id)
+
+    if (!story) {
+      return res.status(404).json({ error: 'Story not found' })
+    }
+
+    story.title = title
+    story.description = description
+    story.name = name
+    if (imagePath) {
+      story.image = imagePath
+    }
+
+    const updatedStory = await story.save()
+
+    res.status(200).json(updatedStory)
+    console.log('Story updated')
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({ error: 'An error occurred while editing the story' })
+  }
+}
+
+// USER STORY DELETING CONTROLLER
+
+const deleteStory = async (req, res) => {
+  try {
+    const { id } = req.body
+
+    const deletedStory = await Story.findByIdAndDelete(id)
+
+    console.log(deletedStory)
+
+    if (!deletedStory) {
+      return res.status(404).json({ error: 'Story not found' })
+    }
+
+    res.status(200).json({ message: 'Story deleted successfully' })
+    console.log('Story deleted')
+  } catch (error) {
+    console.log(error)
+    res
+      .status(500)
+      .json({ error: 'An error occurred while deleting the story' })
+  }
+}
 
 // POSTING COMPLAINT FROM THE USER SIDE
 
@@ -97,4 +119,29 @@ const postComplaints = async (req, res) => {
   }
 }
 
-export { postStory,editStory, postComplaints }
+// ADDING A NEW VOLUNTEER CONTROLLER LOGICS
+
+const postvolunteer = async (req, res) => {
+  try {
+    const { location, name, number } = req.body
+
+    const newVolunteer = new Volunteer({
+      location,
+      name,
+      number
+    })
+
+    const savedVolunteer = await newVolunteer.save()
+
+    res.status(200).json(savedVolunteer)
+
+    if (savedVolunteer) {
+      console.log('saved volunteer')
+    }
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({ error: 'An error ocurred while adding vulunteer' })
+  }
+}
+
+export { postStory, editStory, postComplaints, deleteStory, postvolunteer }
