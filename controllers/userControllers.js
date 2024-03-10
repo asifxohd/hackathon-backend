@@ -1,3 +1,4 @@
+
 import path from 'path';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -118,7 +119,7 @@ const loginUser = async(req, res, next) => {
 
         if(!existingUser.isVerified){
             const otp = otpGenerator.generate(6, { upperCaseAlphabets: false, specialChars: false, lowerCaseAlphabets:false });
-            const html = `<div style="width: 100%;background: #F5FEFD;text-align:center"><h2>${existingUser.username} Welcome Our Shopping Website</h2><h6>Verification OTP</h6><h3 style="color: red;">${otp}</h3><h2>Thank You For Joining...</h2></div>`
+            const html = `<div style="width: 100%;background: #F5FEFD;text-align:center"><h2>Hi ${existingUser.username} Welcome to Our Website</h2><h6>Verification OTP</h6><h3 style="color: red;">${otp}</h3><h2>Thank You For Joining...</h2></div>`
             await sendEmail(existingUser.email, html);
             const OTPdata = {
                 id:existingUser._id,
@@ -201,6 +202,7 @@ const chatBot = async(req,res,next) => {
         next(error);
     }
 }
+
 
 
 // CONTROLLER FUNCTION FOR POST THE STORIES
@@ -343,6 +345,31 @@ const postvolunteer = async (req, res) => {
     res.status(500).json({ error: 'An error ocurred while adding vulunteer' })
   }
 }
+
+
+// SEARCH VOLUNTEERS CONTROLLER FUNCTIONALITY LOGICS
+
+const searchVolunteers = async (req, res) => {
+  try {
+    const { query } = req.query
+
+    const results = await Volunteer.find({
+      $or: [{ location: { $regex: query, $options: 'i' } }]
+    })
+
+    if (!results) {
+      return res.status(404).json({ error: 'No results found' })
+    }
+
+    res.status(200).json(results)
+  } catch (error) {
+    console.log(error)
+    res
+      .status(500)
+      .json({ error: 'An error occurred while performing the search' })
+  }
+}
+
 
 export { 
     postStory, 

@@ -25,11 +25,13 @@ userRouter.post('/login',loginUser);
 userRouter.post('/chatbot',chatBot);
 userRouter.get('/home',userAuthentication,home)
 
+
 userRouter.post('/add-story',upload.single('image'),postStory)
 userRouter.post('/add-complaints',postComplaints)
 userRouter.put('/edit-story',editStory)
 userRouter.delete('/delete-story',deleteStory)
 userRouter.post('/add-volunteer',postvolunteer)
+userRouter.get('/serach-volunteer',searchVolunteers)
 
 
 export default userRouter
