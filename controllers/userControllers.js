@@ -230,7 +230,7 @@ const postStory = async (req, res) => {
     let imagePath = ''
 
     if (req.file) {
-      imagePath = path.join('public', req.file.filename)
+      imagePath = path.join( req.file.filename)
     }
 
     const newStory = new Story({

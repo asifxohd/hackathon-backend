@@ -25,6 +25,7 @@ userRouter.post('/login', loginUser)
 userRouter.post('/chatbot',userAuthentication, chatBot)
 userRouter.get('/home', userAuthentication, home)
 
+
 userRouter.post('/add-story',userAuthentication,upload.single('image'), postStory)
 userRouter.post('/add-complaints',userAuthentication, postComplaints)
 userRouter.put('/edit-story',editStory)
