@@ -163,6 +163,18 @@ const loginUser = async(req, res, next) => {
 }
 
 
+// USER HOME
+const home = async(req, res, next) => {
+    try {
+        console.log(req.user);
+        res.status(200).json({home:true})
+    } catch (error) {
+        
+    }
+}
+
+
+
 // OPEN AI INTEGRATION
 
 const chatBot = async(req,res,next) => {
@@ -368,7 +380,6 @@ export {
     registerUser,
     verifyOTP,
     loginUser,
-    searchVolunteers,
-    chatBot
-
+    chatBot,
+    home
 }
