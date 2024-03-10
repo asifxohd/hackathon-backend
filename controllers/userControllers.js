@@ -381,5 +381,6 @@ export {
     verifyOTP,
     loginUser,
     chatBot,
-    home
+    home,
+    searchVolunteers
 }
