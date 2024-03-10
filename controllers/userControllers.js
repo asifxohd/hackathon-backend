@@ -12,95 +12,84 @@ import { passwordHash } from './Helpers/passwordHash.js'
 import { openai } from '../config/openAI_config.js'
 
 // USER REGISTRATION CONTROLLER
-const registerUser = async (req, res, next) => {
+const registerUser = async(req, res, next) => {
   try {
-    const { username, email, password } = req.body
 
-    if (!(username && email && password)) {
-      return res
-        .status(400)
-        .json({ success: false, message: 'All fields are required.' })
-    }
+      const { username, email, password } = req.body;
+   
+      if (!(username && email && password)) {
+          return res.status(400).json({ success: false, message: "All fields are required." });
+      }   
 
-    const existingUser = await userModel.findOne({ email: email })
-    if (existingUser) {
-      return res
-        .status(400)
-        .json({ success: false, message: 'Email already registered.' })
-    }
-
-    const securePassword = await passwordHash(password)
-
-    const user = new userModel({
-      username,
-      email,
-      password: securePassword
-    })
-
-    const savedUser = await user.save()
-
-    if (savedUser) {
-      const otp = otpGenerator.generate(6, {
-        upperCaseAlphabets: false,
-        specialChars: false,
-        lowerCaseAlphabets: false
-      })
-      const html = `<div style="width: 100%;background: #F5FEFD;text-align:center"><h2>${user.username} Welcome Our Shopping Website</h2><h6>Verification OTP</h6><h3 style="color: red;">${otp}</h3><h2>Thank You For Joining...</h2></div>`
-      await sendEmail(user.email, html)
-      const OTPdata = {
-        id: savedUser._id,
-        otp,
-        startTime: Date.now()
+      
+      const existingUser = await userModel.findOne({ email: email });
+      if (existingUser) {
+          return res.status(400).json({ success: false, message: "Email already registered." });
       }
-      res
-        .status(201)
-        .cookie('OTP', JSON.stringify(OTPdata), {
-          maxAge: 2 * 60 * 1000,
-          secure: true,
-          httpOnly: true,
-          sameSite: 'strict'
-        })
-        .json({
-          success: true,
-          message: 'OTP sending Successful.'
-        })
-    } else {
-      throw new Error('Registration failed, please try again.')
-    }
+
+      const securePassword = await passwordHash(password);
+
+      const user = new userModel({
+          username, 
+          email,
+          password: securePassword
+      });
+      
+      const savedUser = await user.save();
+
+      if (savedUser) {
+          const otp = otpGenerator.generate(6, { upperCaseAlphabets: false, specialChars: false, lowerCaseAlphabets:false });
+          const html = <div style="width: 100%;background: #F5FEFD;text-align:center"><h2>${user.username} Welcome Our Shopping Website</h2><h6>Verification OTP</h6><h3 style="color: red;">${otp}</h3><h2>Thank You For Joining...</h2></div>
+          await sendEmail(user.email, html);
+          const OTPdata = {
+              id:savedUser._id,
+              otp,
+              startTime:Date.now()
+          }
+          req.session.OTP = OTPdata;
+
+          res.status(201).cookie('OTP',JSON.stringify(OTPdata),{
+              maxAge: 2 * 60 * 1000, 
+              secure: true,
+              httpOnly: true,
+              sameSite: 'strict'
+          }).json({
+              success:true,
+              message:'OTP sending Successful.'
+          })
+      } else {
+          throw new Error("Registration failed, please try again.");
+      }
+      
   } catch (error) {
-    console.log(error)
-    next(error)
+      console.log(error)
+      next(error);
   }
 }
 
 // USER OTP VERIFICATION
-const verifyOTP = async (req, res, next) => {
+const verifyOTP = async(req, res, next) => {
   try {
-    const { otp } = req.body
-    const endTime = Date.now()
-    const OTP_INFO = JSON.parse(req.cookies.OTP)
-    const takenTime = endTime / 1000 - OTP_INFO.startTime / 1000
+      const { otp } = req.body;
+      const endTime = Date.now();
+      const OTP_INFO = req.session.OTP;
+      const takenTime = (endTime / 1000) - (OTP_INFO.startTime / 1000);
 
-    if (takenTime < 120) {
-      if (otp === OTP_INFO.otp) {
-        const verifedUpdate = await userModel.updateOne(
-          { _id: OTP_INFO.id },
-          { $set: { isVerified: true } }
-        )
-        if (verifedUpdate) {
-          res
-            .status(200)
-            .json({ success: true, message: 'OTP Verification Successful' })
-          return
-        }
+      if(takenTime < 120 ){
+          if(otp === OTP_INFO.otp){
+              const verifedUpdate = await userModel.updateOne({_id:OTP_INFO.id},{$set:{isVerified:true}});
+              if(verifedUpdate){
+                  res.status(200).json({success:true, message:'OTP Verification Successful'});
+                  return;
+              }
+          }
+          res.status(404).json({success:false,message:'OTP Does Not Match.'})
+      }else{
+          res.status(404).json({success:false,message:'OTP Expired.'})
       }
-      res.status(404).json({ success: false, message: 'OTP Does Not Match.' })
-    } else {
-      res.status(404).json({ success: false, message: 'OTP Expired.' })
-    }
   } catch (error) {
-    console.log(error)
-  }
+      console.log(error);
+    }
 }
 
 // USER LOGIN CONTROLLER
