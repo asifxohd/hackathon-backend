@@ -52,6 +52,11 @@ const registerUser = async (req, res, next) => {
         otp,
         startTime: Date.now()
       }
+
+      console.log(OTPdata);
+      req.OTP_DATA = JSON.stringify(OTPdata)
+      req.otp = otp
+      req.id = savedUser._id
       res
         .status(201)
         .cookie('OTP', JSON.stringify(OTPdata), {
@@ -78,7 +83,9 @@ const verifyOTP = async (req, res, next) => {
   try {
     const { otp } = req.body
     const endTime = Date.now()
-    const OTP_INFO = JSON.parse(req.cookies.OTP)
+    console.log(req.OTP_DATA);
+    console.log(req.id,req.otp);
+    const OTP_INFO = req.OTP_DATA
     const takenTime = endTime / 1000 - OTP_INFO.startTime / 1000
 
     if (takenTime < 120) {
