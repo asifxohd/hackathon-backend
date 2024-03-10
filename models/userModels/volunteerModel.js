@@ -15,7 +15,7 @@ const volunteerSchema = Schema({
     },
     number:{
         type:Number,
-        required:true
+        unique: true
     }
 
 },{

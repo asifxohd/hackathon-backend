@@ -211,6 +211,11 @@ const postStory = async (req, res) => {
   try {
     const { title, description, name } = req.body
 
+    console.log(title);
+    console.log(name);
+
+
+
     let imagePath = ''
 
     if (req.file) {
@@ -233,6 +238,23 @@ const postStory = async (req, res) => {
   } catch (error) {
     console.log(error)
     res.status(500).json({ error: 'An error occure while saving the story' })
+  }
+}
+
+
+// GETTING STORY CONTROLLER
+
+const getStory = async (req,res)=>{
+
+  try {
+    const story = await Story.find(); 
+    if (!story) {
+      return res.status(404).json({ error: 'Story not found' });
+    }
+    res.status(200).json({ story });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: 'An error occurred while getting the story' });
   }
 }
 
@@ -306,6 +328,7 @@ const postComplaints = async (req, res) => {
   try {
     const { complaints } = req.body
 
+
     const newComplaint = new Complaint({
       complaints
     })
@@ -318,6 +341,7 @@ const postComplaints = async (req, res) => {
     }
   } catch (error) {
     console.log(error)
+    res.status(500).json({ error: 'An error occurred while adding volunteer' });
   }
 }
 
@@ -326,6 +350,12 @@ const postComplaints = async (req, res) => {
 const postvolunteer = async (req, res) => {
   try {
     const { location, name, number } = req.body
+
+    const existingNumber = await Volunteer.findOne({number:number})
+
+    if(existingNumber){
+      return res.status(400).json({ message: 'Number already exists' });
+    }
 
     const newVolunteer = new Volunteer({
       location,
@@ -371,6 +401,19 @@ const searchVolunteers = async (req, res) => {
 }
 
 
+// GETTING VOLUNTEERS DATA CONTROLLER
+
+const getVolunteers = async(req,res)=>{
+  try {
+    const volunteers = await Volunteer.find();
+    res.status(200).json({ volunteers });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: 'An error occurred while getting the volunteers' });
+  }
+}
+
+
 export { 
     postStory, 
     editStory, 
@@ -382,5 +425,7 @@ export {
     loginUser,
     chatBot,
     home,
-    searchVolunteers
+    searchVolunteers,
+    getStory,
+    getVolunteers
 }
