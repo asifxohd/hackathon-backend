@@ -1,7 +1,7 @@
 
 import express from 'express'
 
-import { postStory,postComplaints,editStory,deleteStory,postvolunteer,searchVolunteers, registerUser, verifyOTP, loginUser } from '../controllers/userControllers.js'
+import { postStory,postComplaints,editStory,deleteStory,postvolunteer,searchVolunteers, registerUser, verifyOTP, loginUser, chatBot } from '../controllers/userControllers.js'
 
 import { upload } from '../multer/multer.js'
 const userRouter = express.Router()
@@ -9,7 +9,8 @@ const userRouter = express.Router()
 
 userRouter.post('/register',registerUser);
 userRouter.post('/otpverify',verifyOTP);
-userRouter.post('/login',loginUser)
+userRouter.post('/login',loginUser);
+userRouter.post('/chatbot',chatBot);
 
 userRouter.post('/add-story',upload.single('image'),postStory)
 userRouter.post('/add-complaints',postComplaints)

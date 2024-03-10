@@ -4,12 +4,16 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import otpGenerator from 'otp-generator';
 
+
 import Story from '../models/userModels/storyModel.js';
 import Complaint from '../models/userModels/complaintModel.js';
 import Volunteer from '../models/userModels/volunteerModel.js';
 import userModel from '../models/userModels/userModel.js';
 import sendEmail from './Helpers/nodeMailer.js';
 import { passwordHash } from './Helpers/passwordHash.js';
+import { openai } from '../config/openAI_config.js';
+
+
 
 
 
@@ -158,6 +162,34 @@ const loginUser = async(req, res, next) => {
     }
 }
 
+
+// OPEN AI INTEGRATION
+
+const chatBot = async(req,res,next) => {
+    try {
+        const { userPrompt } = req.body;
+
+    
+        // Check if user prompt is provided
+        if (!userPrompt) {
+            return res.status(400).json({ error: 'Please provide a prompt' });
+        }
+        
+        const completion = await openai.chat.completions.create({
+            messages: [
+                { "role": "system", "content": "You are a helpful assistant." },
+                { "role": "user", "content": userPrompt }
+            ],
+            model: "gpt-3.5-turbo",
+        });
+
+        const assistantResponse = completion.choices[0].message.content;
+        res.json({ response: assistantResponse });
+    } catch (error) {
+        console.log(error);
+        next(error);
+    }
+}
 
 
 
@@ -336,6 +368,7 @@ export {
     registerUser,
     verifyOTP,
     loginUser,
-    searchVolunteers
+    searchVolunteers,
+    chatBot
 
 }
