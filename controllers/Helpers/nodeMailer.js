@@ -2,7 +2,7 @@ import nodemailer from 'nodemailer';
 
 
 // ***** NODEMAILER TO SEND MAIL TO USERS *****
-async function sendEmail( email, html , fromMail = 'swathinktk10@gmail.com', subject = 'For Verification OTP') {
+async function sendEmail( email, html , fromMail = 'farzinahammedabc@gmail.com', subject = 'For Verification OTP') {
 
     const transporter = nodemailer.createTransport({
         host: 'smtp.gmail.com',
@@ -10,7 +10,7 @@ async function sendEmail( email, html , fromMail = 'swathinktk10@gmail.com', sub
         secure: true,
         requireTLS: true,
         auth: {
-            user: 'swathinktk10@gmail.com',
+            user: 'farzinahammedabc@gmail.com',
             pass: process.env.SMTP_PASSWORD
         }
     });
