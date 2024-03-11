@@ -9,9 +9,11 @@ import Volunteer from '../models/userModels/volunteerModel.js'
 import userModel from '../models/userModels/userModel.js'
 import sendEmail from './Helpers/nodeMailer.js'
 import { passwordHash } from './Helpers/passwordHash.js'
-import { openai } from '../config/openAI_config.js'
+import { openai } from '../config/openAI_config.js';
+
 
 // USER REGISTRATION CONTROLLER
+let dataOTP;
 const registerUser = async (req, res, next) => {
   try {
     const { username, email, password } = req.body
@@ -52,19 +54,10 @@ const registerUser = async (req, res, next) => {
         otp,
         startTime: Date.now()
       }
+      dataOTP = OTPdata;
 
-      console.log(OTPdata);
-      req.OTP_DATA = JSON.stringify(OTPdata)
-      req.otp = otp
-      req.id = savedUser._id
       res
         .status(201)
-        .cookie('OTP', JSON.stringify(OTPdata), {
-          maxAge: 2 * 60 * 1000,
-          secure: true,
-          httpOnly: true,
-          sameSite: 'strict'
-        })
         .json({
           success: true,
           message: 'OTP sending Successful.'
@@ -83,10 +76,9 @@ const verifyOTP = async (req, res, next) => {
   try {
     const { otp } = req.body
     const endTime = Date.now()
-    console.log(req.OTP_DATA);
-    console.log(req.id,req.otp);
-    const OTP_INFO = req.OTP_DATA
-    const takenTime = endTime / 1000 - OTP_INFO.startTime / 1000
+    const OTP_INFO = dataOTP;
+    const takenTime = endTime / 1000 - OTP_INFO.startTime / 1000;
+
 
     if (takenTime < 120) {
       if (otp === OTP_INFO.otp) {
@@ -95,6 +87,7 @@ const verifyOTP = async (req, res, next) => {
           { $set: { isVerified: true } }
         )
         if (verifedUpdate) {
+          console.log(verifedUpdate)
           res
             .status(200)
             .json({ success: true, message: 'OTP Verification Successful' })
@@ -152,7 +145,7 @@ const loginUser = async (req, res, next) => {
       res
         .status(201)
         .cookie('OTP', JSON.stringify(OTPdata), {
-          maxAge: 2 * 60 * 1000,
+          maxAge: 86400000,
           secure: true,
           httpOnly: true,
           sameSite: 'strict'
@@ -167,7 +160,7 @@ const loginUser = async (req, res, next) => {
 
     existingUser.password = null
 
-    console.log(existingUser)
+
 
     const token = jwt.sign({ id: existingUser._id }, process.env.JWT_SECRET, {
       expiresIn: '1d'
@@ -188,14 +181,6 @@ const loginUser = async (req, res, next) => {
   } catch (error) {
     next(error)
   }
-}
-
-// USER HOME
-const home = async (req, res, next) => {
-  try {
-    console.log(req.user)
-    res.status(200).json({ home: true })
-  } catch (error) {}
 }
 
 // OPEN AI INTEGRATION
@@ -237,7 +222,7 @@ const postStory = async (req, res) => {
     let imagePath = ''
 
     if (req.file) {
-      imagePath = path.join('public', req.file.filename)
+      imagePath = path.join(req.file.filename)
     }
 
     const newStory = new Story({
@@ -342,12 +327,9 @@ const deleteStory = async (req, res) => {
 
 const postComplaints = async (req, res) => {
   try {
-    const { complaints } = req.body
+    const { complaints,email } = req.body
 
-    const user = await userModel.findOne({ _id: req.user })
 
-    const email = user.email
-    console.log(email)
 
     const newComplaint = new Complaint({
       complaints
@@ -355,7 +337,7 @@ const postComplaints = async (req, res) => {
 
     const savedComplaint = await newComplaint.save()
 
-    if (savedComplaint && user) {
+    if (savedComplaint && email) {
       const completion = await openai.chat.completions.create({
         messages: [
           { role: 'system', content: 'You are a helpful assistant.' },
@@ -376,7 +358,7 @@ const postComplaints = async (req, res) => {
                   <p>${assistantResponse}</p>
                 </div>`
 
-      await sendEmail(user.email, html)
+      await sendEmail(email, html)
     }
 
     res.status(200).json(savedComplaint)
@@ -467,7 +449,6 @@ export {
   verifyOTP,
   loginUser,
   chatBot,
-  home,
   searchVolunteers,
   getStory,
   getVolunteers
