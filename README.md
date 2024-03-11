@@ -4,7 +4,7 @@ https://whensheknows.vercel.app/
 
 # When She Knows - Backend
 
-Welcome to the backend repository for the "When She Knows" project. This repository contains the backend codebase built with [insert backend framework/technology].
+Welcome to the backend repository for the "When She Knows" project. This repository contains the backend codebase built with node js.
 
 ## Getting Started
 
