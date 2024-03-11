@@ -47,7 +47,20 @@ const registerUser = async (req, res, next) => {
         specialChars: false,
         lowerCaseAlphabets: false
       })
-      const html = `<div style="width: 100%;background: #F5FEFD;text-align:center"><h2>${user.username} Welcome Our Shopping Website</h2><h6>Verification OTP</h6><h3 style="color: red;">${otp}</h3><h2>Thank You For Joining...</h2></div>`
+      const html = `<div style="width: 90%; background-color: #007bff; padding: 20px;">
+      <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
+          <div style="padding: 40px;">
+              <h2 style="font-size: 24px; color: #333333; margin-bottom: 20px; text-align: center;">Hi ${user.username}, Welcome to Our Website!</h2>
+              <p style="font-size: 18px; color: #666666; margin-bottom: 30px; text-align: center;">Please use the following OTP to verify your account:</p>
+              <div style="text-align: center; margin-bottom: 40px;">
+                  <h1 style="font-size: 48px; color: #ffffff; background-color: #007bff; padding: 10px 20px; border-radius: 5px;">${otp}</h1>
+              </div>
+              <p style="font-size: 16px; color: #666666; margin-bottom: 20px; text-align: center;">This OTP is valid for a limited time.</p>
+              <p style="font-size: 16px; color: #666666; margin-bottom: 0; text-align: center;">Thank you for joining!</p>
+          </div>
+      </div>
+  </div>
+  `
       await sendEmail(user.email, html)
       const OTPdata = {
         id: savedUser._id,
